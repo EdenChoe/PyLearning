@@ -1,0 +1,131 @@
+Git 基本原理：
+# 工作区 就是本机的git init的目录；Repository版本库包含stage和master两个部分；
+# 其中stage中储存的是git add file后file文件和master中file文件之间的区别。
+# 通过git commit可以将stage中的区别应用到master中去，形成一个新的版本。
+-----本地库基本操作-----
+
+git init
+# 在本目录下创建版本库 会生成一个.git目录
+
+git add filename
+# 将文件的改变添加到stage中，若此后再次修改该文件内容，stage中的内容不会主动跟随工作区中的文件变化
+
+git commit -m "Description"
+# 提交新的版本
+
+git status
+# 主要查看工作区文件改变情况，以及修改是否添加到了stage中。
+
+git diff filename
+# 查看master中的file和工作区中的file的区别
+
+git reset --hard HEAD^
+# 通过git reset可以返回之前的版本
+# 其中HEAD表示当前版本 HEAD^为上一版本，HEAD^^为上上个版本
+
+git log
+# 查看版本commit记录 以及commit id
+
+git reset --hard commitid
+
+git checkout -- filename
+git reset HEAD filename
+
+# 场景1：当你改乱了工作区某个文件的内容，想直接丢弃工作区的修改时，用命令git checkout -- file。
+# 场景2：当你不但改乱了工作区某个文件的内容，还添加到了暂存区时，想丢弃修改，分两步，第一步用命令git reset HEAD file，就回到了场景1，第二步按场景1操作。
+# 场景3：已经提交了不合适的修改到版本库时，想要撤销本次提交，参考版本回退一节，不过前提是没有推送到远程库。
+
+git rm filename
+# rm file + git rm + git commit 可删除文件
+#若误删了文件可通过 git checkout 和 git reset 返回之前的版本
+
+-----------------------
+远程库github的使用
+1.生成 ssh key
+首先生成ssh key并将公钥提交到github
+ssh-keygen -t rsa -C "youremail@example.com"
+会在home下生成一个.ssh文件下面有一个公钥和一个私钥
+
+2.push 推送
+要关联一个远程库，使用命令
+git remote add origin git@server-name:path/repo-name.git；
+
+例子：
+git remote add origin git@github.com:FBing/java-code-generator(ssh key直接登录)
+git remote add origin www.github.com/FBing/java-code-generator(这样需要密码登录)
+
+
+删除关联的远程库
+git remote rm origin
+
+关联后，使用命令
+git push -u origin master第一次推送master分支的所有内容；
+
+此后，每次本地提交后，只要有必要，就可以使用命令git push origin master推送最新修改；
+
+3. pull
+git remote show origin 
+#显示远程库origin里的资源
+git pull 
+# 将与远程仓库的版本库同步到本地
+
+4.clone 克隆
+git clone git@github.com:michaelliao/gitskills.git
+# 会在本目录下生成一个新的文件夹（版本库）
+
+---分支管理---
+多人同时开发少不了使用分支。
+
+创建分支：git branch <name>
+切换分支：git checkout <name>
+创建+切换分支：git checkout -b <name>
+合并某分支到当前分支：git merge <name>
+删除分支：git branch -d <name>
+
+基本逻辑：
+master分支相当于你的主干，其他分支上的工作最后大都会merge到master分支上。
+HEAD相当于一个指针，指向你现在工作的分支。
+
+当不存在冲突时，Git使用Fast-forward的方式自动合并。
+当存在冲突时，Git无法自动合并分支时，就必须首先解决冲突。解决冲突后，再提交，合并完成。
+(具体而言需要通过git pull 到本地，再通过给git status 查看区别)
+
+用git log --graph命令可以看到分支合并图。
+
+合并方式还有--on-off等其他方式，但是我并没有看懂。
+
+---git stash---
+
+Git还提供了一个stash功能，可以把当前工作现场“储藏”起来，等以后恢复现场后继续工作.
+git stash
+git stash list
+git stash apply name
+git stash drop name
+git stash pop
+
+比如master分支遇见一个bug，但是dev分支的工作没有做完。
+就可以先把工作现场git stash一下，然后去修复bug；
+修复后，再git stash pop，回到工作现场。
+
+---多人合作开发---
+多人协作的工作模式通常是这样：
+
+1.首先，可以试图用git push origin branch-name推送自己的修改；
+2.如果推送失败，则因为远程分支比你的本地更新，需要先用git pull试图合并；
+3.如果合并有冲突，则解决冲突，并在本地提交；
+4.没有冲突或者解决掉冲突后，再用git push origin branch-name推送就能成功！
+
+常见问题：
+如果git pull提示“no tracking information”，则说明本地分支和远程分支的链接关系没有创建，用命令git branch --set-upstream-to origin/branch-name branch-name。
+
+如果git pull提示“fatal: refusing to merge unrelated histories”
+git pull origin master ----allow-unrelated-histories
+
+
+---标签TAG---
+
+使用commit id表示不方便，于是引入了标签。
+1.命令git tag <name>用于新建一个标签，默认为HEAD，也可以指定一个commit id；
+2.git tag -a <tagname> -m "blablabla..."可以指定标签信息；
+3.git tag -s <tagname> -m "blablabla..."可以用PGP签名标签；
+4.命令git tag可以查看所有标签。
